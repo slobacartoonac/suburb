@@ -4,19 +4,7 @@
         {
             "label": "build-clang",
             "type": "shell",
-            "command": "clang++",
-            "args": [
-                "-o",
-                "${workspaceFolder}/mycode",
-                "${workspaceFolder}/mycode.cpp",
-                "-I/usr/include/x86_64-linux-gnu/c++/11",
-                "-I/usr/include/llvm-14",
-                "-I/usr/include/c++/11",
-                "-I/usr/include/llvm-c-14",
-                "-lLLVM-14",
-                "-g",
-                "-O0"
-            ],
+            "command": "clang++ -g -O3 -o ${workspaceFolder}/mylang/mycode ${workspaceFolder}/mylang/mycode.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core orcjit native`",
             "problemMatcher": [],
             "options": {
                 "cwd": "/usr/bin"

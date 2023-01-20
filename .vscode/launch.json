@@ -1,30 +1,10 @@
 {
     "configurations": [
         {
-            "name": "Launch",
-            "type": "lldb",
-            "request": "launch",
-            "program": "${workspaceFolder}/mycode",
-            "args": [],
-            "preLaunchTask": "build"
-        },
-        {
-            "name": "C++ Launch",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/mycode",
-            "stopAtEntry": false,
-            "launchCompleteCommand": "exec-run",
-            "MIMode": "gdb",
-            "miDebuggerPath": "/usr/bin/gdb",
-            "preLaunchTask": "build",
-            "cwd": "${workspaceFolder}",
-        },
-        {
             "name": "MyCode",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/mycode",
+            "program": "${workspaceFolder}/mylang/mycode",
             "preLaunchTask": "build-clang",
         }
     ]
