@@ -5,5 +5,5 @@ def fib(x)
   else
     fib(x-1)+fib(x-2);
 def main()
-  fib(5)
+  printd(fib(10));
 

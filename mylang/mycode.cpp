@@ -1420,6 +1420,11 @@ static void InitializeModule()
     TheContext = std::make_unique<LLVMContext>();
     TheModule = std::make_unique<Module>("my cool jit", *TheContext);
     TheModule->setDataLayout(TheJIT->getDataLayout());
+    TheModule->getOrInsertFunction(
+        "printd",
+        llvm::FunctionType::get(llvm::IntegerType::getDoubleTy(*TheContext),
+                                llvm::IntegerType::getDoubleTy(*TheContext),
+                                true /* this is var arg func type*/));
 
     Builder = std::make_unique<IRBuilder<>>(*TheContext);
 }
