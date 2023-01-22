@@ -2,8 +2,6 @@
 source_filename = "my cool jit"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 
-declare double @printd(double, ...)
-
 define double @fib(double %x) !dbg !3 {
 entry:
   %x1 = alloca double, align 8
@@ -36,10 +34,12 @@ ifcont:                                           ; preds = %else, %then
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #0
 
+declare double @printd(double)
+
 define double @main() !dbg !17 {
 entry:
   %calltmp = call double @fib(double 1.000000e+01), !dbg !21
-  %calltmp1 = call double (double, ...) @printd(double %calltmp), !dbg !21
+  %calltmp1 = call double @printd(double %calltmp), !dbg !21
   ret double %calltmp1, !dbg !21
 }
 
@@ -65,8 +65,8 @@ attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memo
 !14 = !DILocation(line: 6, column: 11, scope: !3)
 !15 = !DILocation(line: 6, column: 18, scope: !3)
 !16 = !DILocation(line: 6, column: 20, scope: !3)
-!17 = distinct !DISubprogram(name: "main", scope: !2, file: !2, line: 7, type: !18, scopeLine: 7, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !1, retainedNodes: !20)
+!17 = distinct !DISubprogram(name: "main", scope: !2, file: !2, line: 8, type: !18, scopeLine: 8, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !1, retainedNodes: !20)
 !18 = !DISubroutineType(types: !19)
 !19 = !{!6}
 !20 = !{}
-!21 = !DILocation(line: 8, column: 14, scope: !17)
+!21 = !DILocation(line: 9, column: 14, scope: !17)

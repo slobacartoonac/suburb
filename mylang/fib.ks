@@ -4,6 +4,7 @@ def fib(x)
     1
   else
     fib(x-1)+fib(x-2);
+extern printd(y);
 def main()
   printd(fib(10));
 
