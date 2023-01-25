@@ -1,4 +1,8 @@
 
+struct point {
+  x y
+};
+
 def fib(x)
   if x < 3 then
     1
@@ -7,4 +11,5 @@ def fib(x)
 extern printd(y);
 def main()
   printd(fib(10));
+  
 

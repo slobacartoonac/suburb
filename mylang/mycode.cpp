@@ -30,7 +30,8 @@ enum Token
 {
     tok_eof = -1,
 
-    // commands
+    // commands,
+    tok_struct = -101,
     tok_def = -2,
     tok_extern = -3,
 
@@ -61,6 +62,8 @@ std::string getTokName(int Tok)
         return "eof";
     case tok_def:
         return "def";
+    case tok_struct:
+        return "struct";
     case tok_extern:
         return "extern";
     case tok_identifier:
@@ -91,6 +94,7 @@ namespace
 {
     class PrototypeAST;
     class ExprAST;
+    class StructAST;
 }
 
 struct DebugInfo
@@ -147,6 +151,8 @@ static int gettok()
 
         if (IdentifierStr == "def")
             return tok_def;
+        if (IdentifierStr == "struct")
+            return tok_struct;
         if (IdentifierStr == "extern")
             return tok_extern;
         if (IdentifierStr == "if")
@@ -418,6 +424,35 @@ namespace
         int getLine() const { return Line; }
     };
 
+    class StructAST
+    {
+        std::string Name;
+        std::vector<std::string> Args;
+        int Line;
+
+    public:
+        StructAST(SourceLocation Loc, const std::string &Name,
+                  std::vector<std::string> Args)
+            : Name(Name), Args(std::move(Args)), Line(Loc.Line) {}
+        StructType *codegen();
+        const std::string &getName() const { return Name; }
+        raw_ostream &dump(raw_ostream &out, int ind)
+        {
+            indent(out, ind) << "StructAST\n";
+            return out << "null\n";
+        }
+
+        char getOperatorName() const
+        {
+            return Name[Name.size() - 1];
+        }
+        auto getArgs() const
+        {
+            return Args;
+        }
+        int getLine() const { return Line; }
+    };
+
     /// FunctionAST - This class represents a function definition itself.
     class FunctionAST
     {
@@ -474,6 +509,12 @@ std::unique_ptr<ExprAST> LogError(const char *Str)
 }
 
 std::unique_ptr<PrototypeAST> LogErrorP(const char *Str)
+{
+    LogError(Str);
+    return nullptr;
+}
+
+std::unique_ptr<StructAST> LogErrorS(const char *Str)
 {
     LogError(Str);
     return nullptr;
@@ -845,6 +886,33 @@ static std::unique_ptr<PrototypeAST> ParsePrototype()
                                           BinaryPrecedence);
 }
 
+/// prototype
+///   ::= id '(' id* ')'
+///   ::= binary LETTER number? (id, id)
+///   ::= unary LETTER (id)
+static std::unique_ptr<StructAST> ParseStructPrototype()
+{
+    std::string FnName = "struct";
+
+    SourceLocation FnLoc = CurLoc;
+    FnName += (char)CurTok;
+    getNextToken();
+
+    if (CurTok != '{')
+        return LogErrorS("Expected '{' in struct");
+
+    std::vector<std::string> ArgNames;
+    while (getNextToken() == tok_identifier)
+        ArgNames.push_back(IdentifierStr);
+    if (CurTok != '}')
+        return LogErrorS("Expected '}' in struct");
+
+    // success.
+    getNextToken(); // eat ')'.
+
+    return std::make_unique<StructAST>(FnLoc, FnName, ArgNames);
+}
+
 /// definition ::= 'def' prototype expression
 static std::unique_ptr<FunctionAST> ParseDefinition()
 {
@@ -855,6 +923,14 @@ static std::unique_ptr<FunctionAST> ParseDefinition()
 
     if (auto E = ParseExpression())
         return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));
+    return nullptr;
+}
+
+static std::unique_ptr<StructAST> ParseStructDefinition()
+{
+    getNextToken(); // eat struct.
+    if (auto E = ParseStructPrototype())
+        return E;
     return nullptr;
 }
 
@@ -891,6 +967,7 @@ static ExitOnError ExitOnErr;
 static std::map<std::string, AllocaInst *> NamedValues;
 static std::unique_ptr<KaleidoscopeJIT> TheJIT;
 static std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
+static std::map<std::string, std::unique_ptr<StructAST>> StructDescription;
 
 //===----------------------------------------------------------------------===//
 // Debug Info Support
@@ -959,7 +1036,6 @@ Function *getFunction(std::string Name)
     // If no existing prototype exists, return null.
     return nullptr;
 }
-
 /// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
 /// the function.  This is used for mutable variables etc.
 static AllocaInst *CreateEntryBlockAlloca(Function *TheFunction,
@@ -1410,6 +1486,14 @@ Function *FunctionAST::codegen()
     return nullptr;
 }
 
+StructType *StructAST::codegen()
+{
+    auto name = std::string(getName());
+    auto type = llvm::IntegerType::getDoubleTy(*TheContext);
+    llvm::ArrayRef<llvm::Type *> types = {type, type};
+    return StructType::create(*TheContext, types, name);
+}
+
 //===----------------------------------------------------------------------===//
 // Top-Level parsing and JIT Driver
 //===----------------------------------------------------------------------===//
@@ -1435,6 +1519,20 @@ static void HandleDefinition()
     {
         if (!FnAST->codegen())
             fprintf(stderr, "Error reading function definition:");
+    }
+    else
+    {
+        // Skip token for error recovery.
+        getNextToken();
+    }
+}
+
+static void HandleStructDefinition()
+{
+    if (auto FnAST = ParseStructDefinition())
+    {
+        if (!FnAST->codegen())
+            fprintf(stderr, "Error reading struct definition:");
     }
     else
     {
@@ -1490,6 +1588,9 @@ static void MainLoop()
             break;
         case tok_def:
             HandleDefinition();
+            break;
+        case tok_struct:
+            HandleStructDefinition();
             break;
         case tok_extern:
             HandleExtern();
@@ -1551,8 +1652,10 @@ int main()
     InitializeModule();
 
     // Add the current debug info version into the module.
-    TheModule->addModuleFlag(Module::Warning, "Debug Info Version",
-                             DEBUG_METADATA_VERSION);
+    TheModule->
+
+        addModuleFlag(Module::Warning, "Debug Info Version",
+                      DEBUG_METADATA_VERSION);
 
     // Darwin only supports dwarf2.
     if (Triple(sys::getProcessTriple()).isOSDarwin())

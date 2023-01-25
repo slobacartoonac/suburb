@@ -5,6 +5,19 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/mylang/mycode",
+            "args": [
+                "<",
+                "${workspaceFolder}/mylang/fib.ks",
+                "&>",
+                "${workspaceFolder}/mylang/fib.ksx"
+            ],
+            "preLaunchTask": "build-clang",
+        },
+        {
+            "name": "MyCodeRun",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "${workspaceFolder}/mylang/mycode < ${workspaceFolder}/mylang/fib.ks &> ${workspaceFolder}/mylang/fib.ksx",
             "preLaunchTask": "build-clang",
         }
     ]
